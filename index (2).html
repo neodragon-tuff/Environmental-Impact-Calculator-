@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Carbon Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDEDE2;
+    --ink:#232E26;
+    --muted:#5C6659;
+    --moss:#3F5A38;
+    --rust:#93502C;
+    --line:rgba(35,46,38,0.18);
+    --line-soft:rgba(35,46,38,0.10);
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#171D19;
+      --ink:#E7E7DC;
+      --muted:#9AA598;
+      --moss:#84A776;
+      --rust:#D69063;
+      --line:rgba(231,231,220,0.18);
+      --line-soft:rgba(231,231,220,0.10);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#171D19;
+    --ink:#E7E7DC;
+    --muted:#9AA598;
+    --moss:#84A776;
+    --rust:#D69063;
+    --line:rgba(231,231,220,0.18);
+    --line-soft:rgba(231,231,220,0.10);
+  }
+  *,*::before,*::after{box-sizing:inherit;}
+  html,body{height:100%;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Work Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:600px;margin:0 auto;padding:52px 28px 64px;min-height:100%;}
+  @media (max-width:480px){.app{padding:36px 18px 44px;}}
+
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:44px;}
+  .brand{font-family:'Spectral',Georgia,serif;font-style:italic;font-size:16px;color:var(--ink);}
+  .tally{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;}
+
+  h1{font-family:'Spectral',Georgia,serif;font-weight:500;font-size:34px;line-height:1.25;margin:0 0 14px;}
+  .lede{font-size:16px;line-height:1.6;color:var(--muted);max-width:46ch;margin:0 0 36px;}
+
+  .category{font-size:14px;color:var(--rust);margin-bottom:10px;}
+  .question{font-family:'Spectral',Georgia,serif;font-weight:500;font-size:24px;line-height:1.35;margin:0 0 30px;max-width:22ch;}
+
+  .options{border-top:1px solid var(--line);}
+  .opt{
+    display:flex;align-items:center;gap:14px;
+    padding:16px 4px 16px 12px;
+    border-bottom:1px solid var(--line);
+    border-left:3px solid transparent;
+    cursor:pointer;
+    background:transparent;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .opt:hover{background:var(--line-soft);}
+  .opt.chosen{border-left-color:var(--moss);background:var(--line-soft);}
+  .opt .mark{width:8px;height:8px;border-radius:50%;border:1px solid var(--muted);flex:none;}
+  .opt.chosen .mark{background:var(--moss);border-color:var(--moss);}
+  .opt .label{font-size:16px;line-height:1.4;}
+
+  .navrow{display:flex;justify-content:space-between;align-items:center;margin-top:32px;}
+  .back{background:none;border:none;color:var(--muted);font-family:'Work Sans';font-size:14px;cursor:pointer;padding:8px 0;}
+  .back:hover{color:var(--ink);}
+  .back:disabled{visibility:hidden;}
+
+  .track{height:1px;background:var(--line);margin-top:40px;position:relative;}
+  .track .fill{position:absolute;top:0;left:0;height:1px;background:var(--moss);transition:width .4s ease;}
+
+  button.cta{
+    font-family:'Work Sans';font-size:16px;font-weight:600;
+    background:var(--moss);color:var(--paper);
+    border:none;border-radius:3px;
+    padding:14px 26px;cursor:pointer;
+  }
+  button.cta:hover{opacity:.9;}
+
+  .total{margin:8px 0 4px;}
+  .total .num{font-family:'Spectral',Georgia,serif;font-size:64px;font-weight:500;font-variant-numeric:tabular-nums;}
+  .total .unit{font-size:20px;color:var(--muted);margin-left:6px;}
+  .total .cap{font-size:14px;color:var(--muted);margin-top:2px;}
+
+  .scale{margin:44px 0 48px;}
+  .scale-line{position:relative;height:2px;background:var(--line);margin:34px 0 10px;}
+  .marker{position:absolute;top:-5px;width:2px;height:12px;background:var(--muted);}
+  .marker.you{background:var(--rust);width:2px;height:16px;top:-7px;}
+  .marker.target{background:var(--moss);}
+  .tag{position:absolute;top:-30px;font-size:12px;color:var(--muted);white-space:nowrap;transform:translateX(-50%);}
+  .tag.you{color:var(--rust);font-weight:600;}
+  .scale-ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);}
+
+  h2{font-family:'Spectral',Georgia,serif;font-weight:500;font-size:20px;margin:0 0 18px;}
+  .rows{border-top:1px solid var(--line);}
+  .row{display:flex;align-items:baseline;gap:10px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .row .name{font-size:15px;white-space:nowrap;}
+  .row .leader{flex:1;border-bottom:1px dotted var(--line);transform:translateY(-4px);}
+  .row .val{font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .row .bar{height:3px;background:var(--moss);margin-top:6px;width:0;transition:width .7s ease;}
+  .rowbody{flex:1;}
+  .rowtop{display:flex;align-items:baseline;gap:10px;}
+
+  .notes{margin-top:34px;}
+  .notes p{font-size:15px;line-height:1.6;color:var(--muted);margin:0 0 12px;}
+  .notes strong{color:var(--ink);font-weight:600;}
+
+  .again{margin-top:38px;background:none;border:none;border-bottom:1px solid var(--ink);color:var(--ink);font-family:'Work Sans';font-size:14px;padding:0 0 2px;cursor:pointer;}
+
+  .fade{animation:fadein .35s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+const questions = [
+  {id:'energy', cat:'Home energy', q:'How would you describe your home energy use?', opts:[
+    ['Small space, efficient or renewable-powered', 800],
+    ['Average home, mixed energy grid', 2000],
+    ['Larger home, standard grid power', 3500],
+    ['Large home, high usage, no renewables', 5000],
+  ]},
+  {id:'transport', cat:'Transportation', q:'How do you get around day to day?', opts:[
+    ['Mostly walk, bike, or public transit', 500],
+    ['Small car or hybrid, moderate driving', 1500],
+    ['Average car, daily commute', 2700],
+    ['SUV, truck, or a long daily commute', 4500],
+  ]},
+  {id:'flights', cat:'Air travel', q:'How much do you fly in a typical year?', opts:[
+    ['Rarely or never', 0],
+    ['One short-haul round trip', 500],
+    ['One long-haul round trip', 1600],
+    ['Frequent flyer, three or more trips', 4000],
+  ]},
+  {id:'diet', cat:'Diet', q:'Which comes closest to your diet?', opts:[
+    ['Vegan', 1000],
+    ['Vegetarian', 1400],
+    ['Balanced, meat a few times a week', 2200],
+    ['Meat with most meals', 3300],
+  ]},
+  {id:'shopping', cat:'Shopping', q:'How would you describe your shopping habits?', opts:[
+    ['Minimal, mostly secondhand', 500],
+    ['Moderate, occasional new purchases', 1200],
+    ['Frequent new clothes or electronics', 2200],
+  ]},
+  {id:'waste', cat:'Waste', q:'How do you handle waste and recycling?', opts:[
+    ['Compost and recycle almost everything', 150],
+    ['Recycle most things', 300],
+    ['Rarely sort or recycle', 600],
+  ]},
+];
+
+const tips = {
+  energy:'A more efficient heating setup or a renewable energy plan would cut this category the most.',
+  transport:'Trading some car trips for transit, carpooling, or an electric vehicle is your biggest lever here.',
+  flights:'Combining trips, or taking a train for shorter distances, brings this down fast.',
+  diet:'Cutting red meat back to once or twice a week makes a real dent in this number.',
+  shopping:'Buying secondhand or repairing instead of replacing reduces this substantially.',
+  waste:'Composting food scraps and sorting recyclables is one of the easier wins available to you.',
+};
+
+let step = -1;
+let answers = {};
+
+function render(){
+  const app = document.getElementById('app');
+  if(step === -1) app.innerHTML = intro();
+  else if(step < questions.length) app.innerHTML = questionScreen(step);
+  else app.innerHTML = results();
+  app.querySelector('.fade')?.classList.add('fade');
+  wire();
+}
+
+function intro(){
+  return `
+    <div class="fade">
+      <div class="topbar"><span class="brand">The Carbon Ledger</span></div>
+      <h1>What does a year of your life cost the atmosphere?</h1>
+      <p class="lede">Six quick questions about your home, travel, food, and habits. At the end you'll get an honest yearly estimate, in tons of CO2, and where it's coming from.</p>
+      <button class="cta" id="start">Start</button>
+    </div>`;
+}
+
+function questionScreen(i){
+  const item = questions[i];
+  return `
+    <div class="fade">
+      <div class="topbar">
+        <span class="brand">The Carbon Ledger</span>
+        <span class="tally">Entry ${i+1} of ${questions.length}</span>
+      </div>
+      <div class="category">${item.cat}</div>
+      <div class="question">${item.q}</div>
+      <div class="options">
+        ${item.opts.map((o,idx)=>`
+          <div class="opt${answers[item.id]===idx?' chosen':''}" data-idx="${idx}">
+            <span class="mark"></span><span class="label">${o[0]}</span>
+          </div>`).join('')}
+      </div>
+      <div class="navrow">
+        <button class="back" id="back" ${i===0?'disabled':''}>Back</button>
+      </div>
+      <div class="track"><div class="fill" style="width:${(i/questions.length)*100}%"></div></div>
+    </div>`;
+}
+
+function wire(){
+  document.getElementById('start')?.addEventListener('click', ()=>{step=0; render();});
+  document.getElementById('back')?.addEventListener('click', ()=>{step--; render();});
+  document.getElementById('again')?.addEventListener('click', ()=>{step=-1; answers={}; render();});
+  document.querySelectorAll('.opt').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const item = questions[step];
+      answers[item.id] = parseInt(el.dataset.idx);
+      if(step < questions.length - 1){
+        setTimeout(()=>{step++; render();}, 180);
+      } else {
+        setTimeout(()=>{step++; render(); animateResults();}, 180);
+      }
+      render();
+    });
+  });
+}
+
+function totals(){
+  const byCat = questions.map(item=>{
+    const idx = answers[item.id];
+    return {id:item.id, cat:item.cat, kg: idx!==undefined ? item.opts[idx][1] : 0};
+  });
+  const kg = byCat.reduce((s,c)=>s+c.kg,0);
+  return {byCat, kg};
+}
+
+function results(){
+  const {byCat, kg} = totals();
+  const tons = kg/1000;
+  const sorted = [...byCat].sort((a,b)=>b.kg-a.kg);
+  const top = sorted.slice(0,2).map(c=>c.id);
+  const maxScale = 20;
+  const pct = v => Math.min(v/maxScale, 1) * 100;
+
+  return `
+    <div class="fade">
+      <div class="topbar"><span class="brand">The Carbon Ledger</span></div>
+      <h2 style="margin-bottom:2px;">Your ledger for the year</h2>
+      <div class="total">
+        <span class="num" id="totalnum">0.0</span><span class="unit">tons CO2</span>
+        <div class="cap">estimated, based on your six entries</div>
+      </div>
+
+      <div class="scale">
+        <div class="scale-line">
+          <div class="marker target" style="left:${pct(2.3)}%"></div>
+          <div class="marker" style="left:${pct(4.8)}%"></div>
+          <div class="marker you" id="youmarker" style="left:0%"></div>
+          <div class="tag" style="left:${pct(2.3)}%">1.5&deg; target</div>
+          <div class="tag" style="left:${pct(4.8)}%">global avg</div>
+          <div class="tag you" id="youtag" style="left:0%">you</div>
+        </div>
+        <div class="scale-ends"><span>0t</span><span>${maxScale}t</span></div>
+      </div>
+
+      <h2>Where it comes from</h2>
+      <div class="rows">
+        ${sorted.map(c=>`
+          <div class="row">
+            <div class="rowbody">
+              <div class="rowtop">
+                <span class="name">${c.cat}</span>
+                <span class="leader"></span>
+                <span class="val">${(c.kg/1000).toFixed(1)}t</span>
+              </div>
+              <div class="bar" data-w="${(c.kg/Math.max(kg,1))*100}"></div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div class="notes">
+        <p><strong>${questions.find(q=>q.id===top[0]).cat}</strong> ${tips[top[0]]}</p>
+        <p><strong>${questions.find(q=>q.id===top[1]).cat}</strong> ${tips[top[1]]}</p>
+      </div>
+
+      <button class="again" id="again">Start over</button>
+    </div>`;
+}
+
+function animateResults(){
+  const {kg} = totals();
+  const tons = kg/1000;
+  const numEl = document.getElementById('totalnum');
+  const youMarker = document.getElementById('youmarker');
+  const youTag = document.getElementById('youtag');
+  const pct = Math.min(tons/20,1)*100;
+  const start = performance.now();
+  const dur = 900;
+  function frame(t){
+    const p = Math.min((t-start)/dur, 1);
+    const eased = 1-Math.pow(1-p,3);
+    numEl.textContent = (tons*eased).toFixed(1);
+    if(youMarker){ youMarker.style.left = (pct*eased)+'%'; youTag.style.left = (pct*eased)+'%'; }
+    if(p<1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  setTimeout(()=>{
+    document.querySelectorAll('.bar').forEach(b=>{ b.style.width = b.dataset.w+'%'; });
+  }, 100);
+}
+
+render();
+</script>
+</body>
+</html>
